@@ -73,7 +73,7 @@ set_record_ip()
   local id=$1
   local ip=$2
 
-  local data=`curl -s /dev/stdout --connect-timeout $curl_timeout -H "Content-Type: application/json" -H "Authorization: Bearer $do_access_token" -X PUT "$url_do_api/domains/$do_domain/records/$id" -d'{"data":"'"$ip"'"}'`;
+  local data=`curl -s --connect-timeout $curl_timeout -H "Content-Type: application/json" -H "Authorization: Bearer $do_access_token" -X PUT "$url_do_api/domains/$do_domain/records/$id" -d'{"data":"'"$ip"'"}'`;
   if [ -z "$data" ] || [[ "$data" != *"id\":$id"* ]]; then
     return 1;
   else
