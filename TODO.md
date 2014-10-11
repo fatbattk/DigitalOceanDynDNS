@@ -1,5 +1,5 @@
 # TODO
 
-* getopts to take arguments.
-* silent option.
-* auto-create record if unavailable.
+- [x] getopts to take arguments.
+- [x] silent option.
+- [x] auto-create record if unavailable.
