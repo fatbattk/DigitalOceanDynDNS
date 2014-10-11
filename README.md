@@ -1,24 +1,33 @@
 # Digital Ocean Dynamic DNS Updater
 
-Simple **Bash** script to automatically update Digital Ocean DNS record for a domain. Includes basic error checking and common linux commands only.
+Simple **Bash** script to automatically add/update Digital Ocean DNS record for a domain. Includes basic error checking and common linux commands only.
 
 My use case: *Connect to home server that is on a dynamic IP via a fixed domain (ala DynDNS).*
 `(e.g.- nas.mydomain.com vs. 74.125.231.100)`
 
 ## Usage
 
-1. Create new **A record** for domain with desired subdomain *name* and current [*public IP address*](http://ifconfig.me/ip) of home server.
+1. Generate [Personal Access Token](https://cloud.digitalocean.com/settings/applications) from your Digital Ocean account.
 
-2. Generate [Personal Access Token](https://cloud.digitalocean.com/settings/applications) from your Digital Ocean account.
-
-3. Modify the script variables `(i.e.- access token, record, domain)` and set permissions to `755`.
+2. Modify the script to add `access token` and set script permission to `755`.
 
 		chmod 755 /path/to/file/do_dns_update.sh
 
-4. [Cron](http://en.wikipedia.org/wiki/Cron#Predefined_scheduling_definitions) the script to update Digital Ocean's DNS at desired frequency. (Note: *API rate limit is currently 1200 /hr. Script run uses 2.*)
+3. [Cron](http://en.wikipedia.org/wiki/Cron#Predefined_scheduling_definitions) the script to update Digital Ocean's DNS at desired frequency. (Note: *API rate limit is currently 1200 /hr. Script run uses 2.*)
 
 		# once every two days @ 7:30am.
-		30 07 */2 * * /path/to/file/do_dns_update.sh
+		30 07 */2 * * /path/to/file/do_dns_update.sh -s nas mydomain.com
+
+## Options
+
+	$ ./do_dns_update.sh -h
+
+	Usage: do_dns_update.sh [options...] <record name> <domain>
+	Options:
+	  -h      This help text
+	  -u      Updates only. Don't add non-existing
+	  -s      Silent mode. Don't output anything
+
 
 ## Requires
 
