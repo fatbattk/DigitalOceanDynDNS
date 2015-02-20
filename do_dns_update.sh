@@ -92,8 +92,7 @@ get_record()
   fi
 
   local do_num_records="$(json_value total 1 < $tmpfile)";
-  [ -z "$do_num_records" ] && do_num_records=1
-  
+  [ -z "$do_num_records" ] && do_num_records=0
   if echo "$do_num_records" | grep -qe '^[0-9][0-9]*$' || [ "$do_num_records" -gt "$loop_max_records" ] ; then
     do_num_records=$loop_max_records;
   fi
