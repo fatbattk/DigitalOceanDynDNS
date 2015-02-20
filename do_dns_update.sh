@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 # @requires awk, curl, grep, mktemp, sed, tr.
 
 ## START EDIT HERE.
@@ -10,7 +10,7 @@ url_ext_ip="http://checkip.dyndns.org";
 url_ext_ip2="http://ifconfig.me/ip";
 update_only=false;
 verbose=true;
-filename="$(basename $BASH_SOURCE)";
+filename="$(basename -- "$0")";
 ## END EDIT.
 
 # get options.
@@ -92,18 +92,20 @@ get_record()
   fi
 
   local do_num_records="$(json_value total 1 < $tmpfile)";
-  if [[ ! "$do_num_records" =~ ^[0-9]+$ ]] || [ "$do_num_records" -gt "$loop_max_records" ] ; then
+  [ -z "$do_num_records" ] && do_num_records=1
+  
+  if echo "$do_num_records" | grep -qe '^[0-9][0-9]*$' || [ "$do_num_records" -gt "$loop_max_records" ] ; then
     do_num_records=$loop_max_records;
   fi
 
-  for (( i=1; i<="$do_num_records"; i++ ))
+  for i in $(seq 1 $do_num_records)
   do
-    record['name']="$(json_value name $i < $tmpfile)";
-    if [ "${record[name]}" == "$do_record" ] ; then
-      record['id']="$(json_value id $i < $tmpfile)";
-      record['data']="$(json_value data $i < $tmpfile)";
+    record_name="$(json_value name $i < $tmpfile)";
+    if [ "${record_name}" == "$do_record" ] ; then
+      record_id="$(json_value id $i < $tmpfile)";
+      record_data="$(json_value data $i < $tmpfile)";
 
-      if [ ! -z "${record[id]}" ] && [[ "${record[id]}" =~ ^[0-9]+$ ]] ; then
+      if [[ -n "${record_id}" ]] && echo "$do_num_records" | grep -qe '^[0-9][0-9]*$' ; then
         rm -f "$tmpfile";
         return 0;
       fi
@@ -154,7 +156,6 @@ fi
 
 echov "* Fetching Record ID for: $do_record";
 just_added=false;
-declare -A record;
 get_record;
 if [ $? -ne 0 ] ; then
   if [ $update_only == true ] ; then
@@ -172,14 +173,14 @@ if [ $? -ne 0 ] ; then
 fi
 
 if [ $update_only == true ] || [ $just_added != true ] ; then
-  echov "* Comparing ${record[data]} to $ip_address";
-  if [ "${record[data]}" == "$ip_address" ] ; then
+  echov "* Comparing ${record_data} to $ip_address";
+  if [ "${record_data}" == "$ip_address" ] ; then
     echov "Record $do_record.$do_domain already set to $ip_address";
     exit 1;
   fi
 
-  echov "* Updating record ${record[name]}.$do_domain to $ip_address";
-  set_record_ip "${record[id]}" "$ip_address";
+  echov "* Updating record ${record_name}.$do_domain to $ip_address";
+  set_record_ip "${record_id}" "$ip_address";
   if [ $? -ne 0 ] ; then
     echov "Unable to update IP address";
     exit 1;
