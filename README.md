@@ -1,6 +1,8 @@
 # Digital Ocean Dynamic DNS Updater
 
-Simple **Bash** script to automatically add/update Digital Ocean DNS record for a domain. Includes basic error checking and common linux commands only.
+**This fork supports Busybox for use on embedded devices**
+
+Simple **shell** script to automatically add/update Digital Ocean DNS record for a domain. Includes basic error checking and common linux commands only.
 
 My use case: *Connect to home server that is on a dynamic IP via a fixed domain (ala DynDNS).*
 `(e.g.- nas.mydomain.com vs. 74.125.231.100)`
