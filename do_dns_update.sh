@@ -2,7 +2,7 @@
 # @requires awk, curl, grep, mktemp, sed, tr.
 
 ## START EDIT HERE.
-do_access_token="";
+do_access_token="";  # paste your DO Personal Access Token here.
 curl_timeout="15";
 loop_max_records="50";
 url_do_api="https://api.digitalocean.com/v2";
@@ -47,6 +47,9 @@ do_record="$1";
 do_domain="$2";
 if [ $# -lt 2 ] || [ -z "$do_record" ] || [ -z "$do_domain" ] ; then
   echo "Missing required arguments. (See -h for help)";
+  exit 1;
+elif [ -z "$do_access_token" ] ; then
+  echo "Missing token. Please edit this script and add your access token first.";
   exit 1;
 fi
 
@@ -96,7 +99,7 @@ get_record()
     do_num_records=$loop_max_records;
   fi
 
-  for (( i=1; i<="$do_num_records"; i++ ))
+  for i in `seq 1 $do_num_records`
   do
     record['name']="$(json_value name $i < $tmpfile)";
     if [ "${record[name]}" == "$do_record" ] ; then
