@@ -1,8 +1,9 @@
 #!/bin/bash
-# @requires awk, curl, grep, mktemp, sed, tr.
+# @requires awk, curl, grep, mktemp, sed, tr, stat.
 
-## START EDIT HERE.
-do_access_token="";  # paste your DO Personal Access Token here.
+: ${XDG_CONFIG_DIRS:=~/.config}
+
+do_access_token="${XDG_CONFIG_DIRS}"/do_dns_update/access_token
 curl_timeout="15";
 loop_max_records="50";
 url_do_api="https://api.digitalocean.com/v2";
@@ -48,10 +49,28 @@ do_domain="$2";
 if [ $# -lt 2 ] || [ -z "$do_record" ] || [ -z "$do_domain" ] ; then
   echo "Missing required arguments. (See -h for help)";
   exit 1;
-elif [ -z "$do_access_token" ] ; then
-  echo "Missing token. Please edit this script and add your access token first.";
-  exit 1;
+elif [ ! -r "$do_access_token" ]; then
+  echo "Missing token. Please paste it into $do_access_token first."
+  exit 1
+# insist on secure permissions: only the owner of the file should be able to read or write it.
+# we do a bitwise AND to mask out the g=rw and o=rw bits from the permissions;
+# if masking those out gives 0, then we're good
+# note the leading 0s! That makes these numbers octal!
+# XXX if we're concerned about writes then this also needs to check permissions on all parent directories too.
+elif [ $(($(stat -c "%#0a" $do_access_token) & 0066)) -ne 0 ]; then
+  echo "Error: $do_access_token has insecure permissions."
+  exit 1
 fi
+
+# read in access token
+strip_comments()
+{
+  sed 's/#.*//' |  # strip comments
+  sed 's/^\s*//' |    # strip leading whitespace
+  sed 's/\s*$//' |    # strip trailing whitespace
+  sed '/^$/d'  # strip empty lines -- which, after stripping leading/trailing whitespace, covers blank lines too
+}
+do_access_token="$(cat $do_access_token | strip_comments | head -n 1)";
 
 echov()
 {
