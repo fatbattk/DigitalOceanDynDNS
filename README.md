@@ -9,9 +9,11 @@ My use case: *Connect to home server that is on a dynamic IP via a fixed domain 
 
 1. Generate [Personal Access Token](https://cloud.digitalocean.com/settings/applications) from your Digital Ocean account.
 
-2. Modify the script to add `access token` and set script permission to `755`.
+2. Place the token in ~/.config/do_dns_update/access_token
 
-		chmod 755 /path/to/file/do_dns_update.sh
+3. Make script runnable.
+
+		chmod +x /path/to/file/do_dns_update.sh
 
 3. [Cron](http://en.wikipedia.org/wiki/Cron#Predefined_scheduling_definitions) the script to update Digital Ocean's DNS at desired frequency. (Note: *API rate limit is currently 1200 /hr. Script run uses 2.*)
 
