@@ -4,7 +4,6 @@
 ## START EDIT HERE.
 do_access_token="";  # paste your DO Personal Access Token here.
 curl_timeout="15";
-loop_max_records="50";
 url_do_api="https://api.digitalocean.com/v2";
 url_ext_ip="http://checkip.dyndns.org";
 url_ext_ip2="http://ifconfig.me/ip";
@@ -97,9 +96,10 @@ get_record()
     # XXX pre-counting the loop is probably unecessary; we should be able to get
     # jq to give us items in a single pass; probably even to do most of the logic internally,
     # which would parse faster.
-    local do_num_records="$(jq ".meta.total" < $tmpfile)";
-    if [[ ! "$do_num_records" =~ ^[0-9]+$ ]] || [ "$do_num_records" -gt "$loop_max_records" ] ; then
-      do_num_records=$loop_max_records;
+    local do_num_records="$(jq ".meta.total // empty" < $tmpfile)";
+    if [[ ! "$do_num_records" =~ ^[0-9]+$ ]] ; then
+      echo "Warning: no DNS record count found in DO API reply." >&2
+      continue;
     fi
 
     for i in `seq 1 $do_num_records`
