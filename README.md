@@ -1,6 +1,6 @@
 # Digital Ocean Dynamic DNS Updater
 
-Simple **Bash** script to automatically add/update Digital Ocean DNS record for a domain. Includes basic error checking and common linux commands only.
+Simple **Bash** script to automatically add/update Digital Ocean DNS record for a domain. Includes basic error checking and common linux commands only, except for [`jq`](https://stedolan.github.io/jq/) which is designed to be easy to install.
 
 My use case: *Connect to home server that is on a dynamic IP via a fixed domain (ala DynDNS).*
 `(e.g.- nas.mydomain.com vs. 74.125.231.100)`
@@ -33,7 +33,7 @@ My use case: *Connect to home server that is on a dynamic IP via a fixed domain 
 
 * [Domain](https://www.digitalocean.com/community/tutorials/how-to-set-up-a-host-name-with-digitalocean) added on Digital Ocean.
 * Crontab or equivalent.
-* Available linux commands: **awk, curl, grep, mktemp, sed, tr**
+* Available linux commands: **[jq](https://stedolan.github.io/jq/), curl, grep, mktemp, sed, tr**
 
 ## Adapted From
 

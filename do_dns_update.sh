@@ -1,10 +1,9 @@
 #!/bin/bash
-# @requires awk, curl, grep, mktemp, sed, tr.
+# @requires jq, curl, grep, mktemp, sed, tr.
 
 ## START EDIT HERE.
 do_access_token="";  # paste your DO Personal Access Token here.
 curl_timeout="15";
-loop_max_records="50";
 url_do_api="https://api.digitalocean.com/v2";
 url_ext_ip="http://checkip.dyndns.org";
 url_ext_ip2="http://ifconfig.me/ip";
@@ -64,14 +63,6 @@ echov()
   fi
 }
 
-# modified from https://gist.github.com/cjus/1047794#comment-1249451
-json_value()
-{
-  local KEY=$1
-  local num=$2
-  awk -F"[,:}]" '{for(i=1;i<=NF;i++){if($i~/\042'$KEY'\042/){print $(i+1)}}}' | tr -d '"' | sed -n "$num"p
-}
-
 get_external_ip()
 {
   ip_address="$(curl -s --connect-timeout $curl_timeout $url_ext_ip | sed -e 's/.*Current IP Address: //' -e 's/<.*$//' | egrep -o '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}')";
@@ -88,33 +79,47 @@ get_external_ip()
 # https://developers.digitalocean.com/#list-all-domain-records
 get_record()
 {
-  local tmpfile="$(mktemp)";
-  curl -s --connect-timeout "$curl_timeout" -H "Authorization: Bearer $do_access_token" -X GET "$url_do_api/domains/$do_domain/records" > "$tmpfile"
-  if [ ! -s "$tmpfile" ] ; then
-    return 1;
-  fi
+  next_page="$url_do_api/domains/$do_domain/records"
 
-  local do_num_records="$(json_value total 1 < $tmpfile)";
-  if [[ ! "$do_num_records" =~ ^[0-9]+$ ]] || [ "$do_num_records" -gt "$loop_max_records" ] ; then
-    do_num_records=$loop_max_records;
-  fi
-
-  for i in `seq 1 $do_num_records`
-  do
-    record['name']="$(json_value name $i < $tmpfile)";
-    if [ "${record[name]}" == "$do_record" ] ; then
-      record['id']="$(json_value id $i < $tmpfile)";
-      record['data']="$(json_value data $i < $tmpfile)";
-
-      if [ ! -z "${record[id]}" ] && [[ "${record[id]}" =~ ^[0-9]+$ ]] ; then
-        rm -f "$tmpfile";
-        return 0;
-      fi
-      break;
+  while [ ! -z $next_page ]; do
+    local tmpfile="$(mktemp)";
+    curl -s --connect-timeout "$curl_timeout" -H "Authorization: Bearer $do_access_token" -X GET "$next_page" > "$tmpfile"
+    if [ ! -s "$tmpfile" ] ; then
+      return 1;
     fi
+
+    # "// empty" makes jq output "" instead of "null" when we get to the end of the list,
+    # and -r makes it output strings as shell strings instead of wrapped in quotes as json
+    # which makes it fit in better with shell. See https://github.com/sftedolan/jq/issues/354
+    next_page="$(jq -r ".links.pages.next // empty" < $tmpfile)";
+
+    # XXX pre-counting the loop is probably unecessary; we should be able to get
+    # jq to give us items in a single pass; probably even to do most of the logic internally,
+    # which would parse faster.
+    local do_num_records="$(jq ".meta.total // empty" < $tmpfile)";
+    if [[ ! "$do_num_records" =~ ^[0-9]+$ ]] ; then
+      echo "Warning: no DNS record count found in DO API reply." >&2
+      continue;
+    fi
+
+    for i in `seq 1 $do_num_records`
+    do
+      record['name']="$(jq -r ".domain_records[$i].name // empty" < $tmpfile)";
+      if [ "${record[name]}" == "$do_record" ] ; then
+        record['id']="$(jq -r ".domain_records[$i].id // empty" < $tmpfile)";
+        record['data']="$(jq -r ".domain_records[$i].data // empty" < $tmpfile)";
+
+        if [ ! -z "${record[id]}" ] && [[ "${record[id]}" =~ ^[0-9]+$ ]] ; then
+          rm -f "$tmpfile";
+          return 0;
+        fi
+        break;
+      fi
+    done
+
+    rm -f "$tmpfile";
   done
 
-  rm -f "$tmpfile";
   return 1;
 }
 
